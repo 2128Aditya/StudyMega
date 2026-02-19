@@ -1,11 +1,11 @@
-import PdfListLayout from "../shared/PdfListLayout";
+import PdfListPage from "../../components/common/PdfListPage";
 
 export default function SamplePapers() {
   return (
-    <PdfListLayout
+    <PdfListPage
       pageTitle="Sample Papers 📄"
-      pageSubtitle="Practice sample papers and boost your score."
-      type="sample"
+      pageSubtitle="Practice sample papers with solutions."
+      categoryName="Sample Papers"
     />
   );
 }

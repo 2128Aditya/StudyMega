@@ -1,106 +1,130 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Navbar() {
+  const [openAi, setOpenAi] = useState(false);
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const navLinkClass = ({ isActive }) =>
-    `
-      px-4 py-2 rounded-2xl font-semibold transition
-      ${
-        isActive
-          ? "bg-primary text-white shadow-sm"
-          : "text-text/80 hover:text-text hover:bg-primary/10"
-      }
-    `;
-
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
 
   return (
     <header className="w-full sticky top-0 z-50 bg-card/80 backdrop-blur border-b border-border">
-      <div className="w-full px-6 md:px-12 py-4 flex items-center justify-between gap-6">
-        {/* Left: Logo */}
+      <div className="w-full px-6 md:px-12 py-4 flex items-center justify-between">
+        {/* Logo */}
         <Link to="/" className="flex items-center gap-3">
-          <img
-            src="/logo.png"
-            alt="StudyMega"
-            className="h-9 w-9 object-contain"
-          />
-          <span className="text-xl font-extrabold text-text">
-            Study<span className="text-primary">Mega</span>
-          </span>
+          <div className="h-11 w-11 rounded-2xl bg-primary text-white flex items-center justify-center font-extrabold">
+            S
+          </div>
+          <div>
+            <p className="font-extrabold text-text text-lg leading-none">
+              StudyMega
+            </p>
+            <p className="text-xs text-text/60">Notes + PYQ + AI</p>
+          </div>
         </Link>
 
-        {/* Center: Links */}
-        <nav className="hidden lg:flex items-center gap-2">
-          <NavLink to="/" className={navLinkClass}>
-            Home
-          </NavLink>
-          <NavLink to="/notes" className={navLinkClass}>
+        {/* Links */}
+        <nav className="hidden md:flex items-center gap-6 font-semibold text-text">
+          <Link to="/notes" className="hover:text-primary transition">
             Notes
-          </NavLink>
-          <NavLink to="/pyq" className={navLinkClass}>
+          </Link>
+          <Link to="/pyq" className="hover:text-primary transition">
             PYQ
-          </NavLink>
-          <NavLink to="/sample-papers" className={navLinkClass}>
-            Sample Papers
-          </NavLink>
-          <NavLink to="/college" className={navLinkClass}>
-            College Notes
-          </NavLink>
-          <NavLink to="/ai-planner" className={navLinkClass}>
-            AI Planner
-          </NavLink>
-          <NavLink to="/syllabus" className={navLinkClass}>
+          </Link>
+          <Link to="/sample-papers" className="hover:text-primary transition">
+            Sample
+          </Link>
+          <Link to="/important" className="hover:text-primary transition">
+            Important
+          </Link>
+          <Link to="/syllabus" className="hover:text-primary transition">
             Syllabus
-          </NavLink>
+          </Link>
+          <Link to="/college" className="hover:text-primary transition">
+            College
+          </Link>
+
+          {/* AI Tools Dropdown */}
+          <div
+            className="relative"
+            onMouseEnter={() => setOpenAi(true)}
+            onMouseLeave={() => setOpenAi(false)}
+          >
+            <button
+              onClick={() => setOpenAi((p) => !p)}
+              className="hover:text-primary transition flex items-center gap-2"
+            >
+              AI Tools <span className="text-sm">▾</span>
+            </button>
+
+            {openAi && (
+              <div className="absolute top-10 left-0 w-56 p-2 rounded-3xl bg-card border border-border shadow-xl">
+                <Link
+                  to="/ai-planner"
+                  className="block px-4 py-3 rounded-2xl hover:bg-background transition"
+                >
+                  🤖 AI Study Planner
+                  <p className="text-xs text-text/60 mt-1">
+                    Day-wise plan generator
+                  </p>
+                </Link>
+
+                <Link
+                  to="/roadmaps"
+                  className="block px-4 py-3 rounded-2xl hover:bg-background transition"
+                >
+                  🗺️ Roadmaps
+                  <p className="text-xs text-text/60 mt-1">
+                    Full learning roadmaps
+                  </p>
+                </Link>
+              </div>
+            )}
+          </div>
         </nav>
 
-        {/* Right: Auth Buttons */}
+        {/* Right */}
         <div className="flex items-center gap-3">
           {!user ? (
             <>
               <Link
-                to="/register"
+                to="/login"
                 className="
                   px-5 py-2.5 rounded-2xl bg-background border border-border
                   font-semibold text-text hover:bg-card transition
-                "
-              >
-                Register
-              </Link>
-
-              <Link
-                to="/login"
-                className="
-                  px-5 py-2.5 rounded-2xl bg-primary text-white font-semibold
-                  hover:bg-secondary transition shadow-sm
                 "
               >
                 Login
               </Link>
-            </>
-          ) : (
-            <>
-              <Link
-                to="/profile"
-                className="
-                  px-5 py-2.5 rounded-2xl bg-background border border-border
-                  font-semibold text-text hover:bg-card transition
-                "
-              >
-                {user.name || "Profile"}
-              </Link>
 
-              <button
-                onClick={handleLogout}
+              <Link
+                to="/register"
                 className="
                   px-5 py-2.5 rounded-2xl bg-primary text-white font-semibold
                   hover:bg-secondary transition shadow-sm
+                "
+              >
+                Register
+              </Link>
+            </>
+          ) : (
+            <>
+              {user.role === "admin" && (
+                <Link
+                  to="/admin/dashboard"
+                  className="
+                    px-5 py-2.5 rounded-2xl bg-primary text-white font-semibold
+                    hover:bg-secondary transition shadow-sm
+                  "
+                >
+                  Admin Panel
+                </Link>
+              )}
+
+              <button
+                onClick={logout}
+                className="
+                  px-5 py-2.5 rounded-2xl bg-background border border-border
+                  font-semibold text-text hover:bg-card transition
                 "
               >
                 Logout

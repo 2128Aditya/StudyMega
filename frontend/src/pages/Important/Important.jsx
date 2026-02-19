@@ -1,11 +1,11 @@
-import PdfListLayout from "../shared/PdfListLayout";
+import PdfListPage from "../../components/common/PdfListPage";
 
 export default function Important() {
   return (
-    <PdfListLayout
+    <PdfListPage
       pageTitle="Important Questions ⭐"
-      pageSubtitle="Most important questions for exam preparation."
-      type="important"
+      pageSubtitle="Most asked questions + exam focused PDFs."
+      categoryName="Important"
     />
   );
 }

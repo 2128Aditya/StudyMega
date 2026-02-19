@@ -1,11 +1,12 @@
-import PdfListLayout from "../shared/PdfListLayout";
+import PdfListPage from "../../components/common/PdfListPage";
 
 export default function Notes() {
   return (
-    <PdfListLayout
+    <PdfListPage
       pageTitle="Notes 📚"
-      pageSubtitle="Chapter-wise notes for Class 6 to Graduation."
-      type="notes"
+      pageSubtitle="Class 6 to Graduation notes, chapter-wise PDFs."
+      categoryName="Notes"
     />
   );
 }
+ 

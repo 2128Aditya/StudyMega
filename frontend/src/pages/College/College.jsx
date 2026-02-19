@@ -1,11 +1,11 @@
-import PdfListLayout from "../shared/PdfListLayout";
+import PdfListPage from "../../components/common/PdfListPage";
 
 export default function College() {
   return (
-    <PdfListLayout
+    <PdfListPage
       pageTitle="College Notes 🎓"
-      pageSubtitle="Semester-wise notes for college students."
-      type="college"
+      pageSubtitle="Semester notes, PYQ and important questions."
+      categoryName="College"
     />
   );
 }

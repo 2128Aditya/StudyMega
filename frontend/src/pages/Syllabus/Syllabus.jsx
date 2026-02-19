@@ -1,11 +1,11 @@
-import PdfListLayout from "../shared/PdfListLayout";
+import PdfListPage from "../../components/common/PdfListPage";
 
 export default function Syllabus() {
   return (
-    <PdfListLayout
+    <PdfListPage
       pageTitle="Syllabus 📌"
-      pageSubtitle="Latest syllabus for all boards and classes."
-      type="syllabus"
+      pageSubtitle="Latest syllabus PDFs for class 6 to college."
+      categoryName="Syllabus"
     />
   );
 }

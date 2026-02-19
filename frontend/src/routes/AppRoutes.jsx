@@ -19,6 +19,8 @@ import AiPlanner from "../pages/AiPlanner/AiPlanner";
 import Roadmaps from "../pages/AiPlanner/Roadmaps";
 import RoadmapDetail from "../pages/AiPlanner/RoadmapDetail";
 
+import Search from "../pages/Search/Search";
+
 import NotFound from "../pages/NotFound";
 
 /* Admin Pages */
@@ -43,6 +45,9 @@ export default function AppRoutes() {
       <Route path="/college" element={<College />} />
 
       <Route path="/pdf/:id" element={<PdfView />} />
+
+      {/* Search */}
+      <Route path="/search" element={<Search />} />
 
       {/* AI */}
       <Route path="/ai-planner" element={<AiPlanner />} />

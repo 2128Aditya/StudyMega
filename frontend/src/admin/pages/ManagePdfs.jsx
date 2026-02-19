@@ -1,249 +1,184 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import AdminSidebar from "../components/AdminSidebar";
-import { deletePdf, getAllPdfs } from "../../services/pdfApi";
+import { deletePdf, fetchPdfs } from "../../services/pdfApi";
+
+const DEFAULT_THUMB =
+  "https://cdn-icons-png.flaticon.com/512/337/337946.png";
 
 export default function ManagePdfs() {
-  const navigate = useNavigate();
-
+  const [loading, setLoading] = useState(true);
   const [pdfs, setPdfs] = useState([]);
-  const [loading, setLoading] = useState(false);
 
-  // Filters
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("All");
-  const [classLevel, setClassLevel] = useState("All");
+  const [category, setCategory] = useState("all");
 
-  // Load PDFs from backend
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const data = await getAllPdfs();
-        setPdfs(data);
-      } catch (err) {
-        alert(err?.response?.data?.message || "Failed to load PDFs ❌");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
-  }, []);
-
-  // Delete PDF (backend)
-  const handleDelete = async (id) => {
-    const ok = confirm("Delete this PDF? ❌");
-    if (!ok) return;
-
+  const loadPdfs = async () => {
     try {
       setLoading(true);
 
-      await deletePdf(id);
+      // category filter server side
+      const data =
+        category === "all" ? await fetchPdfs("") : await fetchPdfs(category);
 
-      // Refresh list
-      const data = await getAllPdfs();
       setPdfs(data);
-
-      alert("PDF Deleted ✅");
     } catch (err) {
-      alert(err?.response?.data?.message || "Delete failed ❌");
+      alert(err?.response?.data?.message || "Failed to load PDFs");
     } finally {
       setLoading(false);
     }
   };
 
-  // Filtered list
-  const filteredPdfs = useMemo(() => {
-    return pdfs.filter((pdf) => {
-      const matchSearch =
-        pdf?.title?.toLowerCase().includes(search.toLowerCase()) ||
-        pdf?.subject?.toLowerCase().includes(search.toLowerCase());
+  useEffect(() => {
+    loadPdfs();
+    // eslint-disable-next-line
+  }, [category]);
 
-      const matchCategory =
-        category === "All" ? true : pdf?.category === category;
+  const filtered = useMemo(() => {
+    return pdfs.filter((p) => {
+      if (!search.trim()) return true;
 
-      const matchClass =
-        classLevel === "All" ? true : String(pdf?.classLevel) === classLevel;
-
-      return matchSearch && matchCategory && matchClass;
+      return (
+        p.title?.toLowerCase().includes(search.toLowerCase()) ||
+        p.subject?.toLowerCase().includes(search.toLowerCase()) ||
+        p.className?.toLowerCase().includes(search.toLowerCase()) ||
+        p.category?.toLowerCase().includes(search.toLowerCase())
+      );
     });
-  }, [pdfs, search, category, classLevel]);
+  }, [pdfs, search]);
+
+  const handleDelete = async (id) => {
+    const confirm = window.confirm("Delete this PDF permanently?");
+    if (!confirm) return;
+
+    try {
+      await deletePdf(id);
+      alert("✅ PDF Deleted");
+
+      // remove instantly
+      setPdfs((prev) => prev.filter((p) => p._id !== id));
+    } catch (err) {
+      alert(err?.response?.data?.message || "Delete failed");
+    }
+  };
 
   return (
-    <main className="w-full min-h-screen px-6 md:px-12 py-8 bg-background">
-      <div className="w-full grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-        {/* Sidebar */}
-        <AdminSidebar />
-
-        {/* Main */}
-        <div className="w-full">
-          {/* Header */}
-          <div className="w-full p-6 rounded-3xl bg-card border border-border">
-            <p className="text-sm text-text/60">Admin Panel</p>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-text">
-              Manage PDFs 📚
+    <div className="w-full min-h-screen bg-background px-6 md:px-12 py-10">
+      <div className="w-full max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-6 flex-wrap">
+          <div>
+            <h1 className="text-3xl font-extrabold text-text">
+              Manage PDFs 🗂️
             </h1>
             <p className="mt-2 text-text/70">
-              View, search and delete uploaded PDFs.
+              View, search and delete PDFs uploaded on StudyMega.
             </p>
           </div>
 
-          {/* Filters */}
-          <div className="mt-6 w-full p-6 rounded-3xl bg-card border border-border">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Search */}
-              <div>
-                <p className="text-sm font-semibold text-text mb-2">Search</p>
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search title / subject..."
-                  className="
-                    w-full px-4 py-3 rounded-2xl bg-background border border-border
-                    outline-none transition
-                    focus:ring-4 focus:ring-primary/20 focus:border-primary
-                  "
-                />
-              </div>
+          <button
+            onClick={loadPdfs}
+            className="px-5 py-2.5 rounded-2xl bg-primary text-white font-semibold hover:bg-secondary transition"
+          >
+            🔄 Refresh
+          </button>
+        </div>
 
-              {/* Category */}
-              <div>
-                <p className="text-sm font-semibold text-text mb-2">Category</p>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="
-                    w-full px-4 py-3 rounded-2xl bg-background border border-border
-                    outline-none transition
-                    focus:ring-4 focus:ring-primary/20 focus:border-primary
-                  "
-                >
-                  <option value="All">All</option>
-                  <option value="Notes">Notes</option>
-                  <option value="PYQ">PYQ</option>
-                  <option value="Sample Papers">Sample Papers</option>
-                  <option value="Important">Important</option>
-                  <option value="Syllabus">Syllabus</option>
-                  <option value="College">College</option>
-                </select>
-              </div>
+        {/* Filters */}
+        <div className="mt-8 p-5 rounded-3xl bg-card border border-border shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Search */}
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by title / subject / class..."
+              className="w-full px-4 py-3 rounded-2xl border border-border bg-background outline-none focus:ring-4 focus:ring-purple-200"
+            />
 
-              {/* Class */}
-              <div>
-                <p className="text-sm font-semibold text-text mb-2">Class</p>
-                <select
-                  value={classLevel}
-                  onChange={(e) => setClassLevel(e.target.value)}
-                  className="
-                    w-full px-4 py-3 rounded-2xl bg-background border border-border
-                    outline-none transition
-                    focus:ring-4 focus:ring-primary/20 focus:border-primary
-                  "
-                >
-                  <option value="All">All</option>
-                  <option value="6">Class 6</option>
-                  <option value="7">Class 7</option>
-                  <option value="8">Class 8</option>
-                  <option value="9">Class 9</option>
-                  <option value="10">Class 10</option>
-                  <option value="11">Class 11</option>
-                  <option value="12">Class 12</option>
-                  <option value="College">College</option>
-                </select>
-              </div>
-            </div>
-          </div>
+            {/* Category */}
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-4 py-3 rounded-2xl border border-border bg-background outline-none"
+            >
+              <option value="all">All Categories</option>
+              <option value="notes">Notes</option>
+              <option value="pyq">PYQ</option>
+              <option value="sample-papers">Sample Papers</option>
+              <option value="important">Important</option>
+              <option value="syllabus">Syllabus</option>
+              <option value="college">College</option>
+            </select>
 
-          {/* List */}
-          <div className="mt-6 w-full p-6 rounded-3xl bg-card border border-border">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-xl font-extrabold text-text">All PDFs</h2>
-
-              <button
-                onClick={() => navigate("/admin/upload-pdf")}
-                className="
-                  px-5 py-2.5 rounded-2xl bg-primary text-white font-semibold
-                  hover:bg-secondary transition
-                "
-              >
-                + Upload New
-              </button>
-            </div>
-
-            {/* Loading */}
-            {loading && (
-              <p className="mt-6 text-text/70 font-semibold">Loading...</p>
-            )}
-
-            {/* Empty */}
-            {!loading && filteredPdfs.length === 0 && (
-              <p className="mt-6 text-text/70 font-semibold">
-                No PDFs found ❌
-              </p>
-            )}
-
-            {/* Cards */}
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-              {filteredPdfs.map((pdf) => (
-                <div
-                  key={pdf._id || pdf.id}
-                  className="w-full p-5 rounded-3xl bg-background border border-border"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-lg font-extrabold text-text line-clamp-2">
-                        {pdf.title}
-                      </h3>
-                      <p className="mt-1 text-sm text-text/70">
-                        {pdf.subject} • {pdf.category} • Class {pdf.classLevel}
-                      </p>
-                    </div>
-
-                    <button
-                      disabled={loading}
-                      onClick={() => handleDelete(pdf._id)}
-                      className="
-                        px-4 py-2 rounded-2xl bg-red-500 text-white font-semibold
-                        hover:opacity-90 transition
-                        disabled:opacity-60 disabled:cursor-not-allowed
-                      "
-                    >
-                      Delete
-                    </button>
-                  </div>
-
-                  <div className="mt-4 flex flex-col gap-2 text-sm text-text/70">
-                    <p>
-                      <span className="font-semibold text-text">Board:</span>{" "}
-                      {pdf.board}
-                    </p>
-                    <p>
-                      <span className="font-semibold text-text">Medium:</span>{" "}
-                      {pdf.medium}
-                    </p>
-                    <p>
-                      <span className="font-semibold text-text">Year:</span>{" "}
-                      {pdf.year}
-                    </p>
-
-                    {pdf.pdfUrl && (
-                      <a
-                        href={pdf.pdfUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-primary font-bold hover:underline"
-                      >
-                        Open PDF ↗
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
+            {/* Count */}
+            <div className="px-4 py-3 rounded-2xl border border-border bg-background flex items-center font-bold text-text">
+              Total: {filtered.length}
             </div>
           </div>
         </div>
+
+        {/* Content */}
+        {loading ? (
+          <div className="mt-10 p-10 rounded-3xl bg-card border border-border text-center">
+            <p className="text-5xl">⏳</p>
+            <p className="mt-4 font-bold text-text">Loading PDFs...</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="mt-10 p-10 rounded-3xl bg-card border border-border text-center">
+            <p className="text-5xl">😕</p>
+            <p className="mt-4 font-bold text-text">No PDFs found</p>
+          </div>
+        ) : (
+          <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map((p) => (
+              <div
+                key={p._id}
+                className="p-4 rounded-3xl bg-card border border-border shadow-sm hover:shadow-lg transition"
+              >
+                <div className="w-full h-40 rounded-2xl bg-background border border-border flex items-center justify-center overflow-hidden">
+                  <img
+                    src={p.thumbnail || DEFAULT_THUMB}
+                    alt=""
+                    className="w-full h-full object-contain p-4"
+                  />
+                </div>
+
+                <h3 className="mt-4 font-extrabold text-text line-clamp-2">
+                  {p.title}
+                </h3>
+
+                <p className="mt-2 text-sm text-text/70">
+                  {p.category} • {p.subject || "-"} • {p.className || "-"}
+                </p>
+
+                <p className="mt-2 text-xs text-text/60">
+                  Uploaded:{" "}
+                  {p.createdAt
+                    ? new Date(p.createdAt).toLocaleDateString()
+                    : "-"}
+                </p>
+
+                {/* Buttons */}
+                <div className="mt-5 flex items-center gap-3">
+                  <a
+                    href={p.pdfUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 px-4 py-2.5 rounded-2xl bg-background border border-border font-semibold text-text hover:bg-card transition text-center"
+                  >
+                    Open
+                  </a>
+
+                  <button
+                    onClick={() => handleDelete(p._id)}
+                    className="flex-1 px-4 py-2.5 rounded-2xl bg-red-600 text-white font-semibold hover:bg-red-700 transition"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </main>
+    </div>
   );
 }

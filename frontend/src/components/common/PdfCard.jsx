@@ -1,5 +1,8 @@
 import { Link } from "react-router-dom";
 
+const DEFAULT_THUMB =
+  "https://cdn-icons-png.flaticon.com/512/337/337946.png";
+
 export default function PdfCard({ pdf }) {
   return (
     <Link
@@ -9,11 +12,11 @@ export default function PdfCard({ pdf }) {
         hover:shadow-xl hover:-translate-y-1 transition-all duration-200
       "
     >
-      <div className="w-full h-44 bg-background overflow-hidden">
+      <div className="w-full h-44 bg-background overflow-hidden flex items-center justify-center">
         <img
-          src={pdf.thumbnailUrl}
+          src={pdf.thumbnail || DEFAULT_THUMB}
           alt={pdf.title}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain p-4"
         />
       </div>
 
@@ -24,7 +27,7 @@ export default function PdfCard({ pdf }) {
           </span>
 
           <span className="text-xs text-text/60 font-semibold">
-            {pdf.board}
+            {pdf.subject || "PDF"}
           </span>
         </div>
 
@@ -33,17 +36,23 @@ export default function PdfCard({ pdf }) {
         </h3>
 
         <p className="mt-2 text-sm text-text/70">
-          Class: <b className="text-text">{pdf.classLevel}</b> • Subject:{" "}
-          <b className="text-text">{pdf.subject}</b>
+          Class:{" "}
+          <b className="text-text">{pdf.className || "-"}</b> • Subject:{" "}
+          <b className="text-text">{pdf.subject || "-"}</b>
         </p>
 
         <div className="mt-4 flex items-center justify-between">
           <p className="text-xs text-text/60">
-            Year: <b className="text-text">{pdf.year}</b>
+            Uploaded:{" "}
+            <b className="text-text">
+              {pdf.createdAt
+                ? new Date(pdf.createdAt).toLocaleDateString()
+                : "-"}
+            </b>
           </p>
 
           <p className="text-xs text-text/60">
-            Downloads: <b className="text-text">{pdf.downloads}</b>
+            ID: <b className="text-text">{pdf._id?.slice(-6)}</b>
           </p>
         </div>
       </div>

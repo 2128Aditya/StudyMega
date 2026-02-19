@@ -1,330 +1,213 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import AdminSidebar from "../components/AdminSidebar";
 import { uploadPdf } from "../../services/pdfApi";
+import { getDriveDownloadLink } from "../../utils/drive";
+
+const DEFAULT_THUMB =
+  "https://cdn-icons-png.flaticon.com/512/337/337946.png";
 
 export default function UploadPdf() {
-  const navigate = useNavigate();
-
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("Notes");
-  const [classLevel, setClassLevel] = useState("10");
-  const [board, setBoard] = useState("CBSE");
-  const [subject, setSubject] = useState("Maths");
-  const [year, setYear] = useState("2025");
-  const [medium, setMedium] = useState("English");
-  const [pdfUrl, setPdfUrl] = useState("");
-  const [thumbnailUrl, setThumbnailUrl] = useState("");
-  const [description, setDescription] = useState("");
+  const [form, setForm] = useState({
+    title: "",
+    category: "notes",
+    subject: "",
+    className: "",
+    pdfUrl: "",
+    thumbnail: "",
+    description: "",
+  });
 
   const [loading, setLoading] = useState(false);
 
-  const resetForm = () => {
-    setTitle("");
-    setCategory("Notes");
-    setClassLevel("10");
-    setBoard("CBSE");
-    setSubject("Maths");
-    setYear("2025");
-    setMedium("English");
-    setPdfUrl("");
-    setThumbnailUrl("");
-    setDescription("");
+  const handleChange = (e) => {
+    setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!title.trim()) return alert("Title required ❌");
-    if (!pdfUrl.trim()) return alert("PDF URL required ❌");
+    if (!form.title.trim()) return alert("Title is required");
+    if (!form.pdfUrl.trim()) return alert("PDF Link is required");
 
-    setLoading(true);
+    // ✅ convert drive share link → direct download
+    const finalPdfUrl = getDriveDownloadLink(form.pdfUrl.trim());
+
+    // thumbnail fallback
+    const finalThumb = form.thumbnail.trim() ? form.thumbnail.trim() : "";
+
+    const payload = {
+      title: form.title.trim(),
+      category: form.category,
+      subject: form.subject.trim(),
+      className: form.className.trim(),
+      pdfUrl: finalPdfUrl,
+      thumbnail: finalThumb,
+      description: form.description.trim(),
+    };
 
     try {
-      await uploadPdf({
-        title,
-        category,
-        classLevel,
-        board,
-        subject,
-        year,
-        medium,
-        pdfUrl,
-        thumbnailUrl:
-          thumbnailUrl.trim() ||
-          "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=1200&q=80",
-        description,
-      });
+      setLoading(true);
 
-      alert("PDF Uploaded Successfully ✅");
-      resetForm();
-      navigate("/admin/manage-pdfs");
+      await uploadPdf(payload);
+
+      alert("✅ PDF Added Successfully!");
+
+      setForm({
+        title: "",
+        category: "notes",
+        subject: "",
+        className: "",
+        pdfUrl: "",
+        thumbnail: "",
+        description: "",
+      });
     } catch (err) {
-      alert(err?.response?.data?.message || "Upload failed ❌");
+      alert(err?.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="w-full min-h-screen px-6 md:px-12 py-8 bg-background">
-      <div className="w-full grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-        {/* Sidebar */}
-        <AdminSidebar />
+    <div className="w-full min-h-screen bg-background px-6 md:px-12 py-10">
+      <div className="w-full max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-extrabold text-text">
+            Upload PDF (Drive Link) 📤
+          </h1>
+          <p className="mt-2 text-text/70">
+            Paste Google Drive link and StudyMega will auto-generate download
+            link.
+          </p>
+        </div>
 
-        {/* Main */}
-        <div className="w-full">
-          {/* Header */}
-          <div className="w-full p-6 rounded-3xl bg-card border border-border">
-            <p className="text-sm text-text/60">Admin Panel</p>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-text">
-              Upload PDF 📤
-            </h1>
-            <p className="mt-2 text-text/70">
-              Add new Notes, PYQ, Sample Papers, Syllabus, College PDFs.
-            </p>
-          </div>
+        {/* Card */}
+        <div className="w-full bg-card rounded-3xl border border-border shadow-sm p-6 md:p-8">
+          <form onSubmit={handleSubmit} className="grid gap-5">
+            {/* Title */}
+            <div>
+              <label className="text-sm font-bold text-text">Title *</label>
+              <input
+                className="mt-2 w-full px-4 py-3 rounded-2xl border border-border bg-background outline-none focus:ring-4 focus:ring-purple-200"
+                placeholder="e.g. Class 10 Science Chapter 1 Notes"
+                name="title"
+                value={form.title}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          {/* Form */}
-          <form
-            onSubmit={handleSubmit}
-            className="mt-6 w-full p-6 rounded-3xl bg-card border border-border"
-          >
-            <h2 className="text-xl font-extrabold text-text">PDF Details ✍️</h2>
+            {/* Category */}
+            <div>
+              <label className="text-sm font-bold text-text">Category *</label>
+              <select
+                className="mt-2 w-full px-4 py-3 rounded-2xl border border-border bg-background outline-none"
+                name="category"
+                value={form.category}
+                onChange={handleChange}
+              >
+                <option value="notes">Notes</option>
+                <option value="pyq">PYQ</option>
+                <option value="sample-papers">Sample Papers</option>
+                <option value="important">Important</option>
+                <option value="syllabus">Syllabus</option>
+                <option value="college">College</option>
+              </select>
+            </div>
 
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* Title */}
-              <div className="md:col-span-2">
-                <p className="text-sm font-semibold text-text mb-2">Title</p>
+            {/* Subject + Class */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="text-sm font-bold text-text">Subject</label>
                 <input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Example: Class 10 Maths Chapter 1 Notes"
-                  className="
-                    w-full px-4 py-3 rounded-2xl bg-background border border-border
-                    outline-none transition
-                    focus:ring-4 focus:ring-primary/20 focus:border-primary
-                  "
+                  className="mt-2 w-full px-4 py-3 rounded-2xl border border-border bg-background outline-none focus:ring-4 focus:ring-purple-200"
+                  placeholder="e.g. Science, Maths, DSA"
+                  name="subject"
+                  value={form.subject}
+                  onChange={handleChange}
                 />
               </div>
 
-              {/* Category */}
               <div>
-                <p className="text-sm font-semibold text-text mb-2">Category</p>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="
-                    w-full px-4 py-3 rounded-2xl bg-background border border-border
-                    outline-none transition
-                    focus:ring-4 focus:ring-primary/20 focus:border-primary
-                  "
-                >
-                  <option>Notes</option>
-                  <option>PYQ</option>
-                  <option>Sample Papers</option>
-                  <option>Important</option>
-                  <option>Syllabus</option>
-                  <option>College</option>
-                </select>
-              </div>
-
-              {/* Class */}
-              <div>
-                <p className="text-sm font-semibold text-text mb-2">Class</p>
-                <select
-                  value={classLevel}
-                  onChange={(e) => setClassLevel(e.target.value)}
-                  className="
-                    w-full px-4 py-3 rounded-2xl bg-background border border-border
-                    outline-none transition
-                    focus:ring-4 focus:ring-primary/20 focus:border-primary
-                  "
-                >
-                  <option value="6">Class 6</option>
-                  <option value="7">Class 7</option>
-                  <option value="8">Class 8</option>
-                  <option value="9">Class 9</option>
-                  <option value="10">Class 10</option>
-                  <option value="11">Class 11</option>
-                  <option value="12">Class 12</option>
-                  <option value="College">College</option>
-                </select>
-              </div>
-
-              {/* Board */}
-              <div>
-                <p className="text-sm font-semibold text-text mb-2">Board</p>
-                <select
-                  value={board}
-                  onChange={(e) => setBoard(e.target.value)}
-                  className="
-                    w-full px-4 py-3 rounded-2xl bg-background border border-border
-                    outline-none transition
-                    focus:ring-4 focus:ring-primary/20 focus:border-primary
-                  "
-                >
-                  <option>CBSE</option>
-                  <option>ICSE</option>
-                  <option>UP Board</option>
-                  <option>Bihar Board</option>
-                  <option>MP Board</option>
-                  <option>Other</option>
-                </select>
-              </div>
-
-              {/* Subject */}
-              <div>
-                <p className="text-sm font-semibold text-text mb-2">Subject</p>
-                <select
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  className="
-                    w-full px-4 py-3 rounded-2xl bg-background border border-border
-                    outline-none transition
-                    focus:ring-4 focus:ring-primary/20 focus:border-primary
-                  "
-                >
-                  <option>Maths</option>
-                  <option>Science</option>
-                  <option>Physics</option>
-                  <option>Chemistry</option>
-                  <option>Biology</option>
-                  <option>English</option>
-                  <option>Hindi</option>
-                  <option>Social Science</option>
-                  <option>Computer</option>
-                  <option>DSA</option>
-                  <option>DBMS</option>
-                  <option>Web Dev</option>
-                </select>
-              </div>
-
-              {/* Year */}
-              <div>
-                <p className="text-sm font-semibold text-text mb-2">Year</p>
+                <label className="text-sm font-bold text-text">Class</label>
                 <input
-                  value={year}
-                  onChange={(e) => setYear(e.target.value)}
-                  placeholder="2025"
-                  className="
-                    w-full px-4 py-3 rounded-2xl bg-background border border-border
-                    outline-none transition
-                    focus:ring-4 focus:ring-primary/20 focus:border-primary
-                  "
-                />
-              </div>
-
-              {/* Medium */}
-              <div>
-                <p className="text-sm font-semibold text-text mb-2">Medium</p>
-                <select
-                  value={medium}
-                  onChange={(e) => setMedium(e.target.value)}
-                  className="
-                    w-full px-4 py-3 rounded-2xl bg-background border border-border
-                    outline-none transition
-                    focus:ring-4 focus:ring-primary/20 focus:border-primary
-                  "
-                >
-                  <option>English</option>
-                  <option>Hindi</option>
-                </select>
-              </div>
-
-              {/* PDF URL */}
-              <div className="md:col-span-2">
-                <p className="text-sm font-semibold text-text mb-2">PDF URL</p>
-                <input
-                  value={pdfUrl}
-                  onChange={(e) => setPdfUrl(e.target.value)}
-                  placeholder="https://..."
-                  className="
-                    w-full px-4 py-3 rounded-2xl bg-background border border-border
-                    outline-none transition
-                    focus:ring-4 focus:ring-primary/20 focus:border-primary
-                  "
-                />
-                <p className="mt-2 text-xs text-text/60">
-                  (Abhi URL paste karo. Later backend + storage add karenge)
-                </p>
-              </div>
-
-              {/* Thumbnail URL */}
-              <div className="md:col-span-2">
-                <p className="text-sm font-semibold text-text mb-2">
-                  Thumbnail URL (optional)
-                </p>
-                <input
-                  value={thumbnailUrl}
-                  onChange={(e) => setThumbnailUrl(e.target.value)}
-                  placeholder="https://image..."
-                  className="
-                    w-full px-4 py-3 rounded-2xl bg-background border border-border
-                    outline-none transition
-                    focus:ring-4 focus:ring-primary/20 focus:border-primary
-                  "
-                />
-              </div>
-
-              {/* Description */}
-              <div className="md:col-span-2">
-                <p className="text-sm font-semibold text-text mb-2">
-                  Description (optional)
-                </p>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Short description..."
-                  rows={4}
-                  className="
-                    w-full px-4 py-3 rounded-2xl bg-background border border-border
-                    outline-none transition resize-none
-                    focus:ring-4 focus:ring-primary/20 focus:border-primary
-                  "
+                  className="mt-2 w-full px-4 py-3 rounded-2xl border border-border bg-background outline-none focus:ring-4 focus:ring-purple-200"
+                  placeholder="e.g. Class 12, B.Tech Sem 4"
+                  name="className"
+                  value={form.className}
+                  onChange={handleChange}
                 />
               </div>
             </div>
 
-            {/* Buttons */}
-            <div className="mt-7 flex flex-col sm:flex-row gap-3">
-              <button
-                type="submit"
-                disabled={loading}
-                className="
-                  flex-1 px-6 py-3 rounded-2xl bg-primary text-white font-semibold
-                  hover:bg-secondary transition shadow-sm
-                  disabled:opacity-60 disabled:cursor-not-allowed
-                "
-              >
-                {loading ? "Uploading..." : "Upload PDF"}
-              </button>
+            {/* PDF Link */}
+            <div>
+              <label className="text-sm font-bold text-text">
+                PDF Google Drive Link *
+              </label>
+              <input
+                className="mt-2 w-full px-4 py-3 rounded-2xl border border-border bg-background outline-none focus:ring-4 focus:ring-purple-200"
+                placeholder="https://drive.google.com/file/d/..."
+                name="pdfUrl"
+                value={form.pdfUrl}
+                onChange={handleChange}
+                required
+              />
 
-              <button
-                type="button"
-                onClick={resetForm}
-                className="
-                  flex-1 px-6 py-3 rounded-2xl bg-background border border-border
-                  font-semibold text-text hover:bg-card transition
-                "
-              >
-                Reset
-              </button>
-
-              <button
-                type="button"
-                onClick={() => navigate("/admin/manage-pdfs")}
-                className="
-                  flex-1 px-6 py-3 rounded-2xl bg-background border border-border
-                  font-semibold text-text hover:bg-card transition
-                "
-              >
-                Manage PDFs
-              </button>
+              <p className="mt-2 text-xs text-text/60">
+                Tip: Drive link ko “Anyone with link” access pe set karna.
+              </p>
             </div>
+
+            {/* Thumbnail */}
+            <div>
+              <label className="text-sm font-bold text-text">
+                Thumbnail (optional)
+              </label>
+              <input
+                className="mt-2 w-full px-4 py-3 rounded-2xl border border-border bg-background outline-none focus:ring-4 focus:ring-purple-200"
+                placeholder="Paste image URL (optional)"
+                name="thumbnail"
+                value={form.thumbnail}
+                onChange={handleChange}
+              />
+
+              <div className="mt-4 flex items-center gap-4">
+                <img
+                  src={form.thumbnail.trim() ? form.thumbnail : DEFAULT_THUMB}
+                  alt=""
+                  className="w-16 h-16 rounded-2xl border border-border bg-background object-contain p-2"
+                />
+                <p className="text-sm text-text/70">
+                  Preview thumbnail (अगर blank रहेगा तो default icon show होगा)
+                </p>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="text-sm font-bold text-text">
+                Description (optional)
+              </label>
+              <textarea
+                className="mt-2 w-full px-4 py-3 rounded-2xl border border-border bg-background outline-none focus:ring-4 focus:ring-purple-200 min-h-[110px]"
+                placeholder="Short description about this PDF..."
+                name="description"
+                value={form.description}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Submit */}
+            <button
+              disabled={loading}
+              className="w-full px-6 py-3 rounded-2xl bg-primary text-white font-extrabold hover:bg-secondary transition shadow-sm disabled:opacity-60"
+            >
+              {loading ? "Uploading..." : "Add PDF"}
+            </button>
           </form>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

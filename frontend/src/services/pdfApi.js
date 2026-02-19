@@ -1,31 +1,56 @@
-import API from "./api";
+import axios from "axios";
 
-export const getAllPdfs = async () => {
-  const res = await API.get("/pdfs");
+const API = axios.create({
+  baseURL: "http://localhost:5000/api",
+});
+
+// 🔥 Token auto attach (Admin routes ke liye)
+API.interceptors.request.use((req) => {
+  const token = localStorage.getItem("studymega_token");
+  if (token) req.headers.Authorization = `Bearer ${token}`;
+  return req;
+});
+
+/* =========================
+   PUBLIC APIs
+========================= */
+
+// category pass karo: "notes" | "pyq" | "sample-papers" | "important" | "syllabus" | "college"
+// agar empty "" doge to all PDFs aayenge
+export const fetchPdfs = async (category = "") => {
+  const url = category ? `/pdfs?category=${category}` : `/pdfs`;
+  const res = await API.get(url);
   return res.data;
 };
 
-export const getPdfById = async (id) => {
+// latest PDFs (Home page)
+export const fetchLatestPdfs = async (limit = 6) => {
+  const res = await API.get(`/pdfs?latest=true&limit=${limit}`);
+  return res.data;
+};
+
+// 🔥 Search PDFs (title/subject/className)
+export const searchPdfs = async (q) => {
+  const res = await API.get(`/pdfs?q=${encodeURIComponent(q)}`);
+  return res.data;
+};
+
+// single pdf by id
+export const fetchPdfById = async (id) => {
   const res = await API.get(`/pdfs/${id}`);
   return res.data;
 };
 
-export const uploadPdf = async (data) => {
-  const res = await API.post("/pdfs", data); // admin only
+/* =========================
+   ADMIN APIs (Protected)
+========================= */
+
+export const uploadPdf = async (pdfData) => {
+  const res = await API.post("/pdfs", pdfData);
   return res.data;
 };
 
 export const deletePdf = async (id) => {
-  const res = await API.delete(`/pdfs/${id}`); // admin only
-  return res.data;
-};
-
-export const updatePdf = async (id, data) => {
-  const res = await API.patch(`/pdfs/${id}`, data); // admin only
-  return res.data;
-};
-
-export const increaseDownload = async (id) => {
-  const res = await API.post(`/pdfs/${id}/download`);
+  const res = await API.delete(`/pdfs/${id}`);
   return res.data;
 };
